@@ -5,6 +5,14 @@ CSCI 172
 ID: 302029118
 */
 
+/*
+    '.obj' file format notes:
+
+    - v: vertices (x,y,z)
+    - vt: texture coords (u,v)
+    - vn: vertex normals (x,y,z)
+    - f: faces (v index / vt index / vn index) or (v//vn if there is no vt)
+*/
 
 #include <string.h>
 
@@ -20,6 +28,11 @@ ID: 302029118
 #include <SOIL.h>
 #include <math.h>
 
+#include <vector> // added this library because we will need to create vectors
+#include <fstream> // added this library to open an .obj file and read it line by line
+#include <sstream> // added this library so I can parse each line in the wavefront files easier
+
+
 using namespace std;
 
 bool WireFrame= false;
@@ -33,6 +46,18 @@ const GLfloat mat_ambient[]    = { 0.7f, 0.7f, 0.7f, 1.0f };
 const GLfloat mat_diffuse[]    = { 0.8f, 0.8f, 0.8f, 1.0f };
 const GLfloat mat_specular[]   = { 1.0f, 1.0f, 1.0f, 1.0f };
 const GLfloat high_shininess[] = { 100.0f };
+
+// Creating structs for vertices, texture coords, and vertex normals
+// vertices and vertex normals will use Vec3, while text coords will use Vec2
+struct Vec3{ float x, y, z; };
+struct Vec3_face{ int v, vt, vn; };
+struct Vec2{ float u, v; };
+
+// These will be the vectors that will be used to store the .obj data into
+vector<Vec3> vertices;
+vector<Vec2> texture_coords;
+vector<Vec3> vertex_normals;
+vector<Vec3_face> faces;
 
 // Manually-created global variables
 GLuint texID_skybox;
@@ -90,6 +115,73 @@ void loadTexture(char* fileName, GLuint& texID)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
+void loadModel(char* fileName){
+    // Clearing out the vectors just in case there was already data inside from a previous model
+    // Nothing will happen if you clear() on an empty vector
+    vertices.clear();
+    texture_coords.clear();
+    vertex_normals.clear();
+
+    // Opening up the wavefront file to read from it
+    ifstream obj_file(fileName);
+    if(!obj_file.is_open()){
+        cout << "Unable to load wavefront file" << endl;
+        return;
+    }
+
+    string obj_file_string, corner;
+    string row_type, value1_str, value2_str, value3_str;
+    float value1_float, value2_float, value3_float;
+    int value1_int, value2_int, value3_int;
+
+    while(getline(obj_file, obj_file_string)){
+        istringstream iss(obj_file_string);
+
+        if(!(iss >> row_type)){ continue; }
+
+        if(row_type == "v"){
+            iss >> value1_str >> value2_str >> value3_str;
+            value1_float = stof(value1_str);
+            value2_float = stof(value1_str);
+            value3_float = stof(value1_str);
+            vertices.push_back({value1_float, value2_float, value3_float});
+        }
+        else if(row_type == "vt"){
+            iss >> value1_str >> value2_str;
+            value1_float = stof(value1_str);
+            value2_float = stof(value1_str);
+            texture_coords.push_back({value1_float, value2_float});
+
+        }
+        else if(row_type == "vn"){
+            iss >> value1_str >> value2_str >> value3_str;
+            value1_float = stof(value1_str);
+            value2_float = stof(value1_str);
+            value3_float = stof(value1_str);
+            vertex_normals.push_back({value1_float, value2_float, value3_float});
+
+        }
+        else if(row_type == "f"){
+            while(iss >> corner){
+                istringstream iss_corner(corner);
+
+                getline(iss_corner, value1_str, '/');
+                getline(iss_corner, value2_str, '/');
+                getline(iss_corner, value3_str, '/');
+
+                value1_int = stoi(value1_str);
+                if(value2_str.empty())
+                    value2_int = -1;
+                else
+                    value2_int = stoi(value2_str);
+                value3_int = stoi(value3_str);
+
+                faces.push_back({value1_int, value2_int, value3_int});
+            }
+        }
+        else{}
+    }
+}
 
 static void display(void)
 {
@@ -109,48 +201,23 @@ static void display(void)
     // Transformations that affect the whole scene rather than the individuals objects
     glTranslatef(CameraX, CameraY, Zoom);
 
-    // ---------------------------------------- CENTER CUBE ----------------------------------------------------
-    glEnable(GL_LIGHTING);
-    glColor3f(1.0f,1.0f,1.0f);
-    glBindTexture(GL_TEXTURE_2D, texID_cube);
+    // ---------------------------------------- MODEL ----------------------------------------------------
+    for(int i = 0; i < faces.size(); i++){
+        glEnable(GL_LIGHTING);
+        //glBegin(GL_TRIANGLES);
+        //    glNormal3f();
+        //    glTexCoord2f();
+        //    glVertex3f();
 
-    glPushMatrix();
-        glRotatef(Rotate_CubeX, 1.0f, 0.0f, 0.0f);
-        glRotatef(Rotate_CubeY, 0.0f, 1.0f, 0.0f);
-        glScalef(scale, scale, scale);
+        //    glNormal3f();
+        //    glTexCoord2f();
+        //    glVertex3f();
 
-    glBegin(GL_QUADS);
-        glNormal3f(0.0f, 0.0f, 1.0f); // Normal Front Face
-        glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f, -1.0f, 1.0f); // Bottom Left Of The Texture and Quad
-        glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f, -1.0f, 1.0f); // Bottom Right Of The Texture and Quad
-        glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f, 1.0f, 1.0f); // Top Right Of The Texture and Quad
-        glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f, 1.0f, 1.0f); // Top Left Of The Texture and Quad
-        glNormal3f(0.0f, 0.0f, -1.0f); // Normal Back Face
-        glTexCoord2f(1.0f, 0.0f); glVertex3f(-1.0f, -1.0f, -1.0f); // Bottom Right Of The Texture and Quad
-        glTexCoord2f(1.0f, 1.0f); glVertex3f(-1.0f, 1.0f, -1.0f); // Top Right Of The Texture and Quad
-        glTexCoord2f(0.0f, 1.0f); glVertex3f( 1.0f, 1.0f, -1.0f); // Top Left Of The Texture and Quad
-        glTexCoord2f(0.0f, 0.0f); glVertex3f( 1.0f, -1.0f, -1.0f); // Bottom Left Of The Texture and Quad
-        glNormal3f(0.0f, 1.0f, 0.0f); // Normals Top Face
-        glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f, 1.0f, -1.0f); // Top Left Of The Texture and Quad
-        glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f, 1.0f, 1.0f); // Bottom Left Of The Texture and Quad
-        glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f, 1.0f, 1.0f); // Bottom Right Of The Texture and Quad
-        glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f, 1.0f, -1.0f); // Top Right Of The Texture and Quad
-        glNormal3f(0.0f, -1.0f, 0.0f); // Bottom Face
-        glTexCoord2f(1.0f, 1.0f); glVertex3f(-1.0f, -1.0f, -1.0f); // Top Right Of The Texture and Quad
-        glTexCoord2f(0.0f, 1.0f); glVertex3f( 1.0f, -1.0f, -1.0f); // Top Left Of The Texture and Quad
-        glTexCoord2f(0.0f, 0.0f); glVertex3f( 1.0f, -1.0f, 1.0f); // Bottom Left Of The Texture and Quad
-        glTexCoord2f(1.0f, 0.0f); glVertex3f(-1.0f, -1.0f, 1.0f); // Bottom Right Of The Texture and Quad
-        glNormal3f(1.0f, 0.0f, 0.0f); // Right face
-        glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f, -1.0f, -1.0f); // Bottom Right Of The Texture and Quad
-        glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f, 1.0f, -1.0f); // Top Right Of The Texture and Quad
-        glTexCoord2f(0.0f, 1.0f); glVertex3f( 1.0f, 1.0f, 1.0f); // Top Left Of The Texture and Quad
-        glTexCoord2f(0.0f, 0.0f); glVertex3f( 1.0f, -1.0f, 1.0f); // Bottom Left Of The Texture and Quad
-        glNormal3f(-1.0f, 0.0f, 0.0f); // Left Face
-        glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f, -1.0f, -1.0f); // Bottom Left Of The Texture and Quad
-        glTexCoord2f(1.0f, 0.0f); glVertex3f(-1.0f, -1.0f, 1.0f); // Bottom Right Of The Texture and Quad
-        glTexCoord2f(1.0f, 1.0f); glVertex3f(-1.0f, 1.0f, 1.0f); // Top Right Of The Texture and Quad
-        glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f, 1.0f, -1.0f); // Top Left Of The Texture and Quad
-    glEnd();
+        //    glNormal3f();
+        //    glTexCoord2f();
+        //    glVertex3f();
+        glEnd();
+    }
     glPopMatrix();
 
 
@@ -210,20 +277,6 @@ static void key(unsigned char key, int x, int y)
             exit(0);
             break;
 
-        // WASD for rotating the cube in the middle
-        case 'w': // CW Rotation Over X
-            Rotate_CubeX = ((int)Rotate_CubeX - 5)%360;
-            break;
-        case 's': // CCW Rotation Over X
-            Rotate_CubeX = ((int)Rotate_CubeX + 5)%360;
-            break;
-        case 'a': // CCW Rotation Over Y
-            Rotate_CubeY = ((int)Rotate_CubeY - 5)%360;
-            break;
-        case 'd': // CW Rotation Over Y
-            Rotate_CubeY = ((int)Rotate_CubeY + 5)%360;
-            break;
-
         // ZX to zoom in and out of the scene
         case 'z': // Zoom Out
             Zoom -= (float) 0.75f;
@@ -259,18 +312,18 @@ void Specialkeys(int key, int x, int y)
 {
     switch(key)
     {
-        // Arrow keys to rotate the skybox
+        // Arrow keys to rotate the objects
         case GLUT_KEY_UP:
-            Rotate_SkyX = ((int)Rotate_SkyX - 5)%360;
+            Rotate_CubeX = ((int)Rotate_CubeX - 5)%360;
             break;
         case GLUT_KEY_DOWN:
-            Rotate_SkyX = ((int)Rotate_SkyX + 5)%360;
+            Rotate_CubeX = ((int)Rotate_CubeX + 5)%360;
             break;
         case GLUT_KEY_LEFT:
-            Rotate_SkyY = ((int)Rotate_SkyY - 5)%360;
+            Rotate_CubeY = ((int)Rotate_CubeY - 5)%360;
             break;
         case GLUT_KEY_RIGHT:
-            Rotate_SkyY = ((int)Rotate_SkyY + 5)%360;
+            Rotate_CubeY = ((int)Rotate_CubeY + 5)%360;
             break;
    }
   glutPostRedisplay();
