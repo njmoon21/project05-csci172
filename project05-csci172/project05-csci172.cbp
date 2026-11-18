@@ -9,7 +9,7 @@
 		<Build>
 			<Target title="Debug">
 				<Option output="bin/Debug/project05-csci172" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="C:/Users/Nathan Jack Luna/Desktop/CS172/common/bin" />
+				<Option working_dir="C:/Users/njlun/Desktop/CS172/common/bin" />
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
@@ -19,7 +19,7 @@
 			</Target>
 			<Target title="Release">
 				<Option output="bin/Release/project05-csci172" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="C:/Users/Nathan Jack Luna/Desktop/CS172/common/bin" />
+				<Option working_dir="C:/Users/njlun/Desktop/CS172/common/bin" />
 				<Option object_output="obj/Release/" />
 				<Option type="0" />
 				<Option compiler="gcc" />
@@ -33,16 +33,16 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
-			<Add directory="C:/Users/Nathan Jack Luna/Desktop/CS172/common/include" />
+			<Add directory="C:/Users/njlun/Desktop/CS172/common/include" />
 		</Compiler>
 		<Linker>
-			<Add library="../../common/lib/libSOIL.a" />
+			<Add library="../common/lib/libSOIL.a" />
 			<Add library="freeglut" />
 			<Add library="opengl32" />
 			<Add library="glu32" />
 			<Add library="winmm" />
 			<Add library="gdi32" />
-			<Add directory="C:/Users/Nathan Jack Luna/Desktop/CS172/common/lib" />
+			<Add directory="C:/Users/njlun/Desktop/CS172/common/lib" />
 		</Linker>
 		<Unit filename="main.cpp" />
 		<Extensions />

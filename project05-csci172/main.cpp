@@ -60,19 +60,19 @@ struct Vec2{ float u, v; };
 vector<Vec3_float> vertices;
 vector<Vec2> texture_coords;
 vector<Vec3_float> vertex_normals;
-vector<Faces> faces;
+vector<Faces> faces; // The indices list that will include vertex index, texture index, and normal index for f lines
 
 // Manually-created global variables
 GLuint texID_skybox;
-GLuint texID_cube;
+GLuint texID_model;
 char* models[3] = {"models/cube.obj",
-                    "models/cow.obj",
-                    "models/trunk.obj"};
+                    "models/ateneam-2.obj",
+                    "models/jeep.obj"};
 int model_index = 0;
 
 // To control the cube
 float cube_radius = 2.0;
-GLdouble TranslateX, TranslateY, Rotate_CubeX, Rotate_CubeY, Rotate_CubeZ;
+GLdouble TranslateX, TranslateY, rotate_modelX, rotate_modelY, rotate_modelZ;
 GLdouble scale = 0.8f;
 
 // To control the skybox
@@ -215,13 +215,27 @@ static void display(void)
     glTranslatef(CameraX, CameraY, Zoom);
 
     // ---------------------------------------- MODEL ----------------------------------------------------
-    glDisable(GL_TEXTURE_2D);
+    glEnable(GL_TEXTURE_2D);
     glEnable(GL_LIGHTING);
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glBindTexture(GL_TEXTURE_2D, texID_model);
     glPushMatrix();
-        //if (model_index == 2)
-        //    glScalef(0.05f, 0.05f, 0.05f);
-        //else
-        //    glScalef(1.0f, 1.0f, 1.0f);
+        glRotatef(rotate_modelX, 1.0f, 0.0f, 0.0f);
+        if(model_index == 1){
+            glRotatef(rotate_modelY - 90.0f, 0.0f, 1.0f, 0.0f);
+            glTranslatef(1.0f, 0.0f, 0.0f);
+            glScalef(0.001f, 0.001f, 0.001f);
+        }
+        else if(model_index == 2){
+            glRotatef(rotate_modelY, 0.0f, 1.0f, 0.0f);
+            glTranslatef(0.0f, -1.0f, 0.0f);
+            glScalef(1.5f, 1.5f, 1.5f);
+        }
+        else{
+            glRotatef(rotate_modelY, 0.0f, 1.0f, 0.0f);
+            glScalef(2.0f, 2.0f, 2.0f);
+        }
+
 
     for(int i = 0; i < faces.size(); i++){
             glBegin(GL_TRIANGLES);
@@ -359,7 +373,7 @@ static void key(unsigned char key, int x, int y)
 
         // Reset the whole scene
         case ' ':
-            TranslateX = TranslateY = Zoom = Rotate_CubeX = Rotate_CubeY = Rotate_CubeZ = 0;
+            TranslateX = TranslateY = Zoom = rotate_modelX = rotate_modelY = rotate_modelZ = 0;
             Rotate_SkyX = Rotate_SkyY = Rotate_SkyZ = 0;
             CameraX = CameraY = 0;
             break;
@@ -372,16 +386,16 @@ void Specialkeys(int key, int x, int y)
     {
         // Arrow keys to rotate the objects
         case GLUT_KEY_UP:
-            Rotate_CubeX = ((int)Rotate_CubeX - 5)%360;
+            rotate_modelX = ((int)rotate_modelX - 5)%360;
             break;
         case GLUT_KEY_DOWN:
-            Rotate_CubeX = ((int)Rotate_CubeX + 5)%360;
+            rotate_modelX = ((int)rotate_modelX + 5)%360;
             break;
         case GLUT_KEY_LEFT:
-            Rotate_CubeY = ((int)Rotate_CubeY - 5)%360;
+            rotate_modelY = ((int)rotate_modelY - 5)%360;
             break;
         case GLUT_KEY_RIGHT:
-            Rotate_CubeY = ((int)Rotate_CubeY + 5)%360;
+            rotate_modelY = ((int)rotate_modelY + 5)%360;
             break;
    }
   glutPostRedisplay();
@@ -428,6 +442,7 @@ static void init(void)
     glEnable(GL_LIGHTING);
 
     loadTexture("images/cubemap_sky.png", texID_skybox);
+    loadTexture("images/t3.jpg", texID_model);
     loadModel(models[model_index]);
 }
 
@@ -442,7 +457,7 @@ int main(int argc, char *argv[])
     glutInitWindowPosition(0,0);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
 
-    glutCreateWindow("Project 4 CSCI 172 - Nathan Luna");
+    glutCreateWindow("Project05 CSCI 172 - Nathan Luna");
     init();
     glutReshapeFunc(resize);
     glutDisplayFunc(display);

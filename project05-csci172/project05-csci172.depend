@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1794996212 source:c:\users\nathan jack luna\desktop\cs172\project05-csci172-repo\project05-csci172\main.cpp
+1795045092 source:c:\users\njlun\desktop\cs172\project05-csci172\main.cpp
 	<string.h>
 	<GLUT/glut.h>
 	<GL/glut.h>
@@ -11,11 +11,11 @@
 	<fstream>
 	<sstream>
 
-1789786556 c:\users\nathan jack luna\desktop\cs172\common\include\gl\glut.h
+1794272171 c:\users\njlun\desktop\cs172\common\include\gl\glut.h
 	<windows.h>
 	<stdlib.h>
 	<GL/gl.h>
 	<GL/glu.h>
 
-1668642808 c:\users\nathan jack luna\desktop\cs172\common\include\soil.h
+1790811448 c:\users\njlun\desktop\cs172\common\include\soil.h
 
