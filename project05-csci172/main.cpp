@@ -1,8 +1,9 @@
 /*
-Nathan Jack Luna
-11/10/2026
-CSCI 172
-ID: 302029118
+    Nathan Jack Luna
+    ID: 302029118
+    Project05
+    CSCI 172
+    11/10/2026
 */
 
 /*
@@ -49,19 +50,25 @@ const GLfloat high_shininess[] = { 100.0f };
 
 // Creating structs for vertices, texture coords, and vertex normals
 // vertices and vertex normals will use Vec3, while text coords will use Vec2
-struct Vec3{ float x, y, z; };
-struct Vec3_face{ int v, vt, vn; };
+// faces will be represented as a vector, with each index holding three Vec3_int's (corners)
+struct Vec3_float{ float x, y, z; };
+struct Vec3_int{ int v, vt, vn; };
+struct Faces{ vector<Vec3_int> corners; };
 struct Vec2{ float u, v; };
 
 // These will be the vectors that will be used to store the .obj data into
-vector<Vec3> vertices;
+vector<Vec3_float> vertices;
 vector<Vec2> texture_coords;
-vector<Vec3> vertex_normals;
-vector<Vec3_face> faces;
+vector<Vec3_float> vertex_normals;
+vector<Faces> faces;
 
 // Manually-created global variables
 GLuint texID_skybox;
 GLuint texID_cube;
+char* models[3] = {"models/cube.obj",
+                    "models/cow.obj",
+                    "models/trunk.obj"};
+int model_index = 0;
 
 // To control the cube
 float cube_radius = 2.0;
@@ -121,6 +128,7 @@ void loadModel(char* fileName){
     vertices.clear();
     texture_coords.clear();
     vertex_normals.clear();
+    faces.clear();
 
     // Opening up the wavefront file to read from it
     ifstream obj_file(fileName);
@@ -129,7 +137,7 @@ void loadModel(char* fileName){
         return;
     }
 
-    string obj_file_string, corner;
+    string obj_file_string, corner_str, corner_index;
     string row_type, value1_str, value2_str, value3_str;
     float value1_float, value2_float, value3_float;
     int value1_int, value2_int, value3_int;
@@ -142,42 +150,47 @@ void loadModel(char* fileName){
         if(row_type == "v"){
             iss >> value1_str >> value2_str >> value3_str;
             value1_float = stof(value1_str);
-            value2_float = stof(value1_str);
-            value3_float = stof(value1_str);
+            value2_float = stof(value2_str);
+            value3_float = stof(value3_str);
             vertices.push_back({value1_float, value2_float, value3_float});
         }
         else if(row_type == "vt"){
             iss >> value1_str >> value2_str;
             value1_float = stof(value1_str);
-            value2_float = stof(value1_str);
+            value2_float = stof(value2_str);
             texture_coords.push_back({value1_float, value2_float});
 
         }
         else if(row_type == "vn"){
             iss >> value1_str >> value2_str >> value3_str;
             value1_float = stof(value1_str);
-            value2_float = stof(value1_str);
-            value3_float = stof(value1_str);
+            value2_float = stof(value2_str);
+            value3_float = stof(value3_str);
             vertex_normals.push_back({value1_float, value2_float, value3_float});
 
         }
         else if(row_type == "f"){
-            while(iss >> corner){
-                istringstream iss_corner(corner);
+            Faces face;
 
-                getline(iss_corner, value1_str, '/');
-                getline(iss_corner, value2_str, '/');
-                getline(iss_corner, value3_str, '/');
+            while (iss >> corner_str){
+                istringstream iss_corner(corner_str);
+                string v_str, vt_str, vn_str;
+                Vec3_int corner;
 
-                value1_int = stoi(value1_str);
-                if(value2_str.empty())
-                    value2_int = -1;
+                getline(iss_corner, v_str, '/');
+                getline(iss_corner, vt_str, '/');
+                getline(iss_corner, vn_str, '/');
+
+                corner.v = stoi(v_str) - 1;
+                if(!vt_str.empty())
+                    corner.vt = stoi(vt_str) - 1;
                 else
-                    value2_int = stoi(value2_str);
-                value3_int = stoi(value3_str);
+                    corner.vt = -1;
+                corner.vn = stoi(vn_str) - 1;
 
-                faces.push_back({value1_int, value2_int, value3_int});
+                face.corners.push_back(corner);
             }
+            faces.push_back(face);
         }
         else{}
     }
@@ -202,20 +215,64 @@ static void display(void)
     glTranslatef(CameraX, CameraY, Zoom);
 
     // ---------------------------------------- MODEL ----------------------------------------------------
+    glDisable(GL_TEXTURE_2D);
+    glEnable(GL_LIGHTING);
+    glPushMatrix();
+        //if (model_index == 2)
+        //    glScalef(0.05f, 0.05f, 0.05f);
+        //else
+        //    glScalef(1.0f, 1.0f, 1.0f);
+
     for(int i = 0; i < faces.size(); i++){
-        glEnable(GL_LIGHTING);
-        //glBegin(GL_TRIANGLES);
-        //    glNormal3f();
-        //    glTexCoord2f();
-        //    glVertex3f();
+            glBegin(GL_TRIANGLES);
 
-        //    glNormal3f();
-        //    glTexCoord2f();
-        //    glVertex3f();
+            glNormal3f(vertex_normals[faces[i].corners[0].vn].x,
+                       vertex_normals[faces[i].corners[0].vn].y,
+                       vertex_normals[faces[i].corners[0].vn].z
+            );
+            if(faces[i].corners[0].vt == -1)
+                glTexCoord2f(0.0f, 0.0f);
+            else{
+                glTexCoord2f(texture_coords[faces[i].corners[0].vt].u,
+                             texture_coords[faces[i].corners[0].vt].v
+                );
+            }
+            glVertex3f(vertices[faces[i].corners[0].v].x,
+                       vertices[faces[i].corners[0].v].y,
+                       vertices[faces[i].corners[0].v].z
+            );
 
-        //    glNormal3f();
-        //    glTexCoord2f();
-        //    glVertex3f();
+            glNormal3f(vertex_normals[faces[i].corners[1].vn].x,
+                       vertex_normals[faces[i].corners[1].vn].y,
+                       vertex_normals[faces[i].corners[1].vn].z
+            );
+            if(faces[i].corners[1].vt == -1)
+                glTexCoord2f(0.0f, 0.0f);
+            else{
+                glTexCoord2f(texture_coords[faces[i].corners[1].vt].u,
+                             texture_coords[faces[i].corners[1].vt].v
+                );
+            }
+            glVertex3f(vertices[faces[i].corners[1].v].x,
+                       vertices[faces[i].corners[1].v].y,
+                       vertices[faces[i].corners[1].v].z
+            );
+
+            glNormal3f(vertex_normals[faces[i].corners[2].vn].x,
+                       vertex_normals[faces[i].corners[2].vn].y,
+                       vertex_normals[faces[i].corners[2].vn].z
+            );
+            if(faces[i].corners[2].vt == -1)
+                glTexCoord2f(0.0f, 0.0f);
+            else{
+                glTexCoord2f(texture_coords[faces[i].corners[2].vt].u,
+                             texture_coords[faces[i].corners[2].vt].v
+                );
+            }
+            glVertex3f(vertices[faces[i].corners[2].v].x,
+                       vertices[faces[i].corners[2].v].y,
+                       vertices[faces[i].corners[2].v].z
+            );
         glEnd();
     }
     glPopMatrix();
@@ -223,13 +280,14 @@ static void display(void)
 
     // ---------------------------------------- SKY BOX ------------------------------------------------------
     glDisable(GL_LIGHTING);
+    glEnable(GL_TEXTURE_2D);
     glColor3f(1.0f, 1.0f, 1.0f);
     glBindTexture(GL_TEXTURE_2D, texID_skybox);
 
     glPushMatrix();
         glRotatef(Rotate_SkyX, 1.0f, 0.0f, 0.0f);
         glRotatef(Rotate_SkyY, 0.0f, 1.0f, 0.0f);
-        glScalef(30, 30, 30);
+        glScalef(50, 50, 50);
 
     glBegin(GL_QUADS);
         glNormal3f(0.0f, 0.0f, -1.0f); // Normal Front Face
@@ -329,6 +387,15 @@ void Specialkeys(int key, int x, int y)
   glutPostRedisplay();
 }
 
+// Creating a function for recording left-clicks
+void mouse(int button, int state, int x, int y){
+    if(button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
+        model_index = (model_index + 1) % 3;
+        loadModel(models[model_index]);
+        glutPostRedisplay();
+    }
+}
+
 static void idle(void)
 {
     glutPostRedisplay();
@@ -361,7 +428,7 @@ static void init(void)
     glEnable(GL_LIGHTING);
 
     loadTexture("images/cubemap_sky.png", texID_skybox);
-    loadTexture("images/mario_brick.png", texID_cube);
+    loadModel(models[model_index]);
 }
 
 
@@ -381,6 +448,7 @@ int main(int argc, char *argv[])
     glutDisplayFunc(display);
     glutKeyboardFunc(key);
     glutSpecialFunc(Specialkeys);
+    glutMouseFunc(mouse); // Adding my left-click function
 
     glutIdleFunc(idle);
     glutMainLoop();
