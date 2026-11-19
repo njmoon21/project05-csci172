@@ -1,10 +1,12 @@
 /*
-    Nathan Jack Luna
+    Name: Nathan Jack Luna
     ID: 302029118
-    Project05
-    CSCI 172
-    11/10/2026
+
+    Project: project05-csci172
+    Class: CSCI 172
+    Date: 11/10/2026
 */
+
 
 /*
     '.obj' file format notes:
@@ -145,7 +147,7 @@ void loadModel(char* fileName){
     while(getline(obj_file, obj_file_string)){
         istringstream iss(obj_file_string);
 
-        if(!(iss >> row_type)){ continue; }
+        if(!(iss >> row_type)){ continue; } // In case the line being read is empty
 
         if(row_type == "v"){
             iss >> value1_str >> value2_str >> value3_str;
@@ -192,7 +194,8 @@ void loadModel(char* fileName){
             }
             faces.push_back(face);
         }
-        else{}
+        else // If the row_type is anything else, ignore parsing and move to the next line
+            continue;
     }
 }
 
@@ -209,6 +212,7 @@ static void display(void)
 	else
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);		//Toggle WIRE FRAME
 
+
     // your code here
 
     // Transformations that affect the whole scene rather than the individuals objects
@@ -221,6 +225,9 @@ static void display(void)
     glBindTexture(GL_TEXTURE_2D, texID_model);
     glPushMatrix();
         glRotatef(rotate_modelX, 1.0f, 0.0f, 0.0f);
+
+        // The 3 models used differ in position, starting rotation, and size. This if-statement branch
+        // tries to keep all the objects similar to each other.
         if(model_index == 1){
             glRotatef(rotate_modelY - 90.0f, 0.0f, 1.0f, 0.0f);
             glTranslatef(1.0f, 0.0f, 0.0f);
@@ -236,10 +243,11 @@ static void display(void)
             glScalef(2.0f, 2.0f, 2.0f);
         }
 
-
+    // Processes and renders every face of the currently selected model
     for(int i = 0; i < faces.size(); i++){
             glBegin(GL_TRIANGLES);
 
+            // Corner 1
             glNormal3f(vertex_normals[faces[i].corners[0].vn].x,
                        vertex_normals[faces[i].corners[0].vn].y,
                        vertex_normals[faces[i].corners[0].vn].z
@@ -256,6 +264,7 @@ static void display(void)
                        vertices[faces[i].corners[0].v].z
             );
 
+            // Corner 2
             glNormal3f(vertex_normals[faces[i].corners[1].vn].x,
                        vertex_normals[faces[i].corners[1].vn].y,
                        vertex_normals[faces[i].corners[1].vn].z
@@ -272,6 +281,7 @@ static void display(void)
                        vertices[faces[i].corners[1].v].z
             );
 
+            // Corner 3
             glNormal3f(vertex_normals[faces[i].corners[2].vn].x,
                        vertex_normals[faces[i].corners[2].vn].y,
                        vertex_normals[faces[i].corners[2].vn].z
@@ -340,6 +350,13 @@ static void display(void)
     glutSwapBuffers();
 }
 
+/*
+    Some key functionalities from the last project (Skybox) were kept in.
+        - z/x zooms out of scene
+        - i/k/j/l moves the camera up down left right
+        - SPACE resets scene
+*/
+
 static void key(unsigned char key, int x, int y)
 {
     switch (key)
@@ -402,6 +419,7 @@ void Specialkeys(int key, int x, int y)
 }
 
 // Creating a function for recording left-clicks
+// Had to create separate function, initially thought I was supposed to use Specialkeys() function
 void mouse(int button, int state, int x, int y){
     if(button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
         model_index = (model_index + 1) % 3;

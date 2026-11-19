@@ -19,3 +19,15 @@
 
 1790811448 c:\users\njlun\desktop\cs172\common\include\soil.h
 
+1795072041 source:c:\users\nathan jack luna\desktop\cs172\project05-csci172-repo\project05-csci172\main.cpp
+	<string.h>
+	<GLUT/glut.h>
+	<GL/glut.h>
+	<stdlib.h>
+	<iostream>
+	<SOIL.h>
+	<math.h>
+	<vector>
+	<fstream>
+	<sstream>
+
